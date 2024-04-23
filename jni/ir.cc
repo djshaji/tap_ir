@@ -25,11 +25,11 @@
 
 #include <sndfile.h>
 #include <samplerate.h>
-#include <zita-convolver.h>
+#include <zita-convolver.cc>
 #include <lv2.h>
 
 #include "ir.h"
-#include "ir_utils.h"
+#include "ir_utils.cc"
 
 #define ZITA_CONVOLVER_VERSION  0
 #if ZITA_CONVOLVER_MAJOR_VERSION == 3
@@ -57,9 +57,6 @@
 
 
 static LV2_Descriptor * IR_Descriptor = NULL;
-static GKeyFile * keyfile = NULL;
-static GtkListStore * store_bookmarks = NULL;
-G_LOCK_DEFINE_STATIC(conv_configure_lock);
 
 static void connectPortIR(LV2_Handle instance,
 			  uint32_t port,
@@ -189,8 +186,8 @@ static void cleanupIR(LV2_Handle instance) {
 	IR * ir = (IR*)instance;
 
 	if (!ir->first_conf_done) {
-		ir->conf_thread_exit = 1;
-		g_thread_join(ir->conf_thread);
+		// ir->conf_thread_exit = 1;
+		// g_thread_join(ir->conf_thread);
 	}
 
 	free_convproc(ir);
@@ -205,7 +202,7 @@ static void cleanupIR(LV2_Handle instance) {
 	free_ir_samples(ir);
 
 	if (ir->source_path && (strlen(ir->source_path) > 0)) {
-		save_path(keyfile, ir->source_path);
+		// save_path(keyfile, ir->source_path);
 		free(ir->source_path);
 	}
 	free(instance);
@@ -516,7 +513,7 @@ void init_conv(IR * ir) {
 		length = ir->block_length;
 	}
 
-	G_LOCK(conv_configure_lock);
+	// G_LOCK(conv_configure_lock);
 	//printf("configure length=%d ir->block_length=%d\n", length, ir->block_length);
 #if ZITA_CONVOLVER_VERSION == 3
 	if (ir->nchan == 4) {
@@ -541,7 +538,7 @@ void init_conv(IR * ir) {
 				  Convproc::MAXPART,
 				  density);
 #endif
-	G_UNLOCK(conv_configure_lock);
+	// G_UNLOCK(conv_configure_lock);
 	if (ret != 0) {
 		fprintf(stderr, "IR: can't initialise zita-convolver engine, Convproc::configure returned %d\n", ret);
 		free_conv_safely(conv);
@@ -585,7 +582,7 @@ void init_conv(IR * ir) {
 	ir->conv_req_to_use = req_to_use;
 }
 
-gpointer IR_configurator_thread(gpointer data) {
+void * IR_configurator_thread(void * data) {
 
 	IR * ir = (IR *)data;
 
@@ -599,7 +596,7 @@ gpointer IR_configurator_thread(gpointer data) {
 							  ir->port_fhash_2);
 			//printf("IR confthread: fhash = %016" PRIx64 "\n", fhash);
 			if (fhash) {
-				char * filename = get_path_from_key(keyfile, fhash);
+				char * filename ; //= get_path_from_key(keyfile, fhash);
 				if (filename) {
 					//printf("  load filename=%s\n", filename);
 					ir->source_path = filename;
@@ -655,11 +652,9 @@ static LV2_Handle instantiateIR(const LV2_Descriptor *descriptor,
 	ir->prepare_convdata = prepare_convdata;
 	ir->init_conv = init_conv;
 
-	ir->keyfile = keyfile;
-	ir->store_bookmarks = store_bookmarks;
 
-	ir->conf_thread = g_thread_new("IR_configurator_thread",
-                                       IR_configurator_thread, (gpointer)ir);
+	// ir->conf_thread = g_thread_new("IR_configurator_thread",
+    //                                    IR_configurator_thread, (gpointer)ir);
 	return (LV2_Handle)ir;
 }
 
@@ -796,11 +791,11 @@ void __attribute__ ((constructor)) init() {
 		return;
 	}
 
-	if (!g_thread_supported()) {
-		fprintf(stderr, "IR: This plugin requires a working GLib with GThread.\n");
-		IR_Descriptor = NULL;
-		return;
-	}
+	// if (!g_thread_supported()) {
+	// 	fprintf(stderr, "IR: This plugin requires a working GLib with GThread.\n");
+	// 	IR_Descriptor = NULL;
+	// 	return;
+	// }
 
 	IR_Descriptor = (LV2_Descriptor *)malloc(sizeof(LV2_Descriptor));
 
@@ -813,17 +808,17 @@ void __attribute__ ((constructor)) init() {
 	IR_Descriptor->run = runIR;
 	IR_Descriptor->extension_data = extdata_IR;
 
-	keyfile = load_keyfile();
-	store_bookmarks = gtk_list_store_new(2,
-					     G_TYPE_STRING,  /* visible name (key) */
-					     G_TYPE_STRING); /* full pathname (value) */
-	load_bookmarks(keyfile, store_bookmarks);
+	// keyfile = load_keyfile();
+	// store_bookmarks = gtk_list_store_new(2,
+	// 				     G_TYPE_STRING,  /* visible name (key) */
+	// 				     G_TYPE_STRING); /* full pathname (value) */
+	// load_bookmarks(keyfile, store_bookmarks);
 }
 
 void __attribute__ ((destructor)) fini() {
-	save_keyfile(keyfile);
-	g_key_file_free(keyfile);
-	g_object_unref(store_bookmarks);
+	// save_keyfile(keyfile);
+	// g_key_file_free(keyfile);
+	// g_object_unref(store_bookmarks);
 	free(IR_Descriptor);
 }
 

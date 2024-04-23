@@ -33,6 +33,7 @@
 #define BSIZE       0x4000      /* Blocksize for soundfile data access */
 #define BSIZE_SR    0x1000      /* Blocksize for SRC */
 #define MAXSIZE 0x00100000  /* Max. available convolver size of zita-convolver */
+#define exp10f(x) (powf(10.,x))
 
 #define DB_CO(g) ((g) > -90.0f ? exp10f((g) * 0.05f) : 0.0f)
 #define CO_DB(g) ((g) > 0.0f ? 20.0f * log10f(g) : -90.0f)
@@ -111,7 +112,6 @@ typedef struct _ir {
 	float * port_meter_wet_R;
 
 	/* Thread that loads and computes configurations */
-	GThread * conf_thread;
 	int conf_thread_exit;
 	int first_conf_done;
 

@@ -30,27 +30,10 @@
 uint64_t fhash(char *str);
 uint64_t fhash_from_ports(float *port0, float *port1, float *port2);
 void ports_from_fhash(uint64_t fhash, float *port0, float *port1, float *port2);
-GKeyFile * load_keyfile(void);
-void save_keyfile(GKeyFile * keyfile);
-char * get_path_from_key(GKeyFile * keyfile, uint64_t fhash);
-void save_path(GKeyFile * keyfile, char * path);
-void load_bookmarks(GKeyFile * keyfile, GtkListStore * store);
-char * lookup_bookmark_in_store(GtkTreeModel * model, const char * bookmark);
-void store_bookmark(GKeyFile * keyfile, char * bookmark, char * fullpath);
-void delete_bookmark(GKeyFile * keyfile, char * bookmark);
-void load_files(GtkListStore * store, char * dirpath);
-void select_entry(GtkTreeModel * model, GtkTreeSelection * select, char * filename);
 
 void compute_envelope(float ** samples, int nchan, int nfram,
 		      int attack_time_s, float attack_pc,
 		      float env_pc, float length_pc);
 
-void draw_centered_text(cairo_t * cr, const char * text, int x , int y);
-
-double get_adjustment(GtkAdjustment * adj);
-void set_adjustment(GtkAdjustment * adj, double value);
-GtkAdjustment * create_adjustment(gdouble def, gdouble min,
-				  gdouble max, gpointer data,
-				  int logarithmic);
 
 #endif /* _IR_UTILS_H */
