@@ -53,7 +53,7 @@
  */
 #define CONVPROC_SCHEDULER_PRIORITY 0
 #define CONVPROC_SCHEDULER_CLASS SCHED_FIFO
-#define THREAD_SYNC_MODE true
+#define THREAD_SYNC_MODE false
 
 
 static LV2_Descriptor * IR_Descriptor = NULL;
@@ -147,6 +147,16 @@ static void connectPortIR(LV2_Handle instance,
 	case IR_PORT_METER_WET_R:
 		ir->port_meter_wet_R = (float*)data;
 		break;
+	case IR_PORT_BUFFER_SIZE:
+		ir->buffer_size = (float *) data ;
+		ir->source_nfram = * ((int *) ir->buffer_size);
+		break ;
+	case IR_PORT_BUFFER:
+		for (int i = 0; i < * ir -> buffer_size; i++) {
+			ir->source_samples[i] = (( float *) data) [i];
+		}
+
+		break ;
 	}
 }
 
@@ -645,6 +655,8 @@ static LV2_Handle instantiateIR(const LV2_Descriptor *descriptor,
 	ir->maxsize = MAXSIZE;
 	ir->block_length = 1024;
 
+	ir->source_samplerate = sample_rate;
+	ir->nchan = 1;
 	ir->load_sndfile = load_sndfile;
 	ir->resample_init = resample_init;
 	ir->resample_do = resample_do;
@@ -652,6 +664,9 @@ static LV2_Handle instantiateIR(const LV2_Descriptor *descriptor,
 	ir->prepare_convdata = prepare_convdata;
 	ir->init_conv = init_conv;
 
+	resample_init(ir);
+	prepare_convdata(ir);
+	init_conv(ir);
 
 	// ir->conf_thread = g_thread_new("IR_configurator_thread",
     //                                    IR_configurator_thread, (gpointer)ir);

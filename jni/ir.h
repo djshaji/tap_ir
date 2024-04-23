@@ -74,6 +74,9 @@
 #define IR_PORT_METER_WET_L  23
 #define IR_PORT_METER_WET_R  24
 
+#define IR_PORT_BUFFER_SIZE 30
+#define IR_PORT_BUFFER 31
+
 typedef struct _ir {
 	/* LV2 extensions */
 	/*
@@ -110,6 +113,8 @@ typedef struct _ir {
 	float * port_meter_dry_R;
 	float * port_meter_wet_L;
 	float * port_meter_wet_R;
+
+	float * buffer_size ;
 
 	/* Thread that loads and computes configurations */
 	int conf_thread_exit;
