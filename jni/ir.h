@@ -44,7 +44,7 @@
 /* Audio I/O ports */
 #define IR_PORT_INPUT_L       0
 #define IR_PORT_INPUT_R       1
-#define IR_PORT_OUTPUT_L      2
+#define IR_PORT_OUTPUT_L      30
 #define IR_PORT_OUTPUT_R      3
 
 /* Control ports */
@@ -53,7 +53,7 @@
 #define IR_PORT_ATTACK        6  /* Attack [%] */
 #define IR_PORT_ATTACKTIME    7  /* Attack time [ms] */
 #define IR_PORT_ENVELOPE      8  /* Envelope [%] */
-#define IR_PORT_LENGTH        9  /* Length [%] */
+#define IR_PORT_LENGTH        31  /* Length [%] */
 #define IR_PORT_STRETCH      10  /* Stretch [%] */
 #define IR_PORT_STEREO_IN    11  /* Stereo width In [%] */
 #define IR_PORT_STEREO_IR    12  /* Stereo width IR [%] */
@@ -74,8 +74,8 @@
 #define IR_PORT_METER_WET_L  23
 #define IR_PORT_METER_WET_R  24
 
-#define IR_PORT_BUFFER_SIZE 30
-#define IR_PORT_BUFFER 31
+#define IR_PORT_BUFFER_SIZE 9
+#define IR_PORT_BUFFER 2
 
 typedef struct _ir {
 	/* LV2 extensions */

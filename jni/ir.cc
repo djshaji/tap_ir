@@ -31,6 +31,16 @@
 #include "ir.h"
 #include "ir_utils.cc"
 
+#define MAX_BUFER_SIZE 1024 * 1024
+
+#ifdef __ANDROID__
+    #include <android/log.h>
+    #define MODULE_NAME "TAP IR"
+    #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, MODULE_NAME, __VA_ARGS__)
+#else
+    #define LOGD(...) printf(__VA_ARGS__)
+#endif
+
 #define ZITA_CONVOLVER_VERSION  0
 #if ZITA_CONVOLVER_MAJOR_VERSION == 3
 #undef ZITA_CONVOLVER_VERSION
@@ -53,7 +63,7 @@
  */
 #define CONVPROC_SCHEDULER_PRIORITY 0
 #define CONVPROC_SCHEDULER_CLASS SCHED_FIFO
-#define THREAD_SYNC_MODE false
+#define THREAD_SYNC_MODE true
 
 
 static LV2_Descriptor * IR_Descriptor = NULL;
@@ -64,6 +74,7 @@ static void connectPortIR(LV2_Handle instance,
 
 	IR * ir = (IR *)instance;
 
+	//~ LOGD ("setting port %d", port);
 	switch (port) {
 	/* Audio I/O */
 	case IR_PORT_INPUT_L:
@@ -150,11 +161,16 @@ static void connectPortIR(LV2_Handle instance,
 	case IR_PORT_BUFFER_SIZE:
 		ir->buffer_size = (float *) data ;
 		ir->source_nfram = * ((int *) ir->buffer_size);
+		LOGD ("set buffer size: %d",  ir->source_nfram);
 		break ;
 	case IR_PORT_BUFFER:
-		for (int i = 0; i < * ir -> buffer_size; i++) {
+		LOGD ("got buffer size: %d",  ir->source_nfram);
+		for (int i = 0; i < ir -> source_nfram; i++) {
+			//~ LOGD ("copying %d", i);
 			ir->source_samples[i] = (( float *) data) [i];
 		}
+		
+		LOGD ("set frames successfully");
 
 		break ;
 	}
@@ -654,6 +670,7 @@ static LV2_Handle instantiateIR(const LV2_Descriptor *descriptor,
 	ir->reinit_pending = 0;
 	ir->maxsize = MAXSIZE;
 	ir->block_length = 1024;
+	ir->source_samples = (float*)malloc(MAX_BUFER_SIZE * sizeof(float));
 
 	ir->source_samplerate = sample_rate;
 	ir->nchan = 1;
@@ -663,7 +680,8 @@ static LV2_Handle instantiateIR(const LV2_Descriptor *descriptor,
 	ir->resample_cleanup = resample_cleanup;
 	ir->prepare_convdata = prepare_convdata;
 	ir->init_conv = init_conv;
-
+	ir->conv_in_use = 0 ;
+	ir->conv_req_to_use = -1 ;
 	resample_init(ir);
 	prepare_convdata(ir);
 	init_conv(ir);
@@ -690,6 +708,7 @@ static void runIR(LV2_Handle instance, uint32_t sample_count) {
 	float wet_R_meter = 0.0;
 
 	ir->run = 1;
+	//~ LOGD ("707");
 
 	if (ir->conv_in_use != ir->conv_req_to_use) {
 		/* call stop_process() on the conv being switched away from
@@ -726,6 +745,7 @@ static void runIR(LV2_Handle instance, uint32_t sample_count) {
 	float dry_gain = ir->dry_gain;
 	float wet_gain = ir->wet_gain;
 
+	//~ LOGD ("744");
 	if (sample_count != ir->block_length) {
 		if ((sample_count == 1) || (sample_count == 2) || (sample_count == 4) || (sample_count == 8) ||
 		    (sample_count == 16) || (sample_count == 32) || (sample_count == 64) || (sample_count == 128) ||
@@ -742,6 +762,7 @@ static void runIR(LV2_Handle instance, uint32_t sample_count) {
 	int n = sample_count;
 	float * p, * q;
 	float dry_L, dry_R, wet_L, wet_R;
+	//~ LOGD ("761");
 
 	if (conv != 0) {
 		p = conv->inpdata(0);
@@ -788,10 +809,10 @@ static void runIR(LV2_Handle instance, uint32_t sample_count) {
 	ir->dry_gain = dry_gain;
 	ir->wet_gain = wet_gain;
 
-	*ir->port_meter_dry_L = dry_L_meter;
-	*ir->port_meter_dry_R = dry_R_meter;
-	*ir->port_meter_wet_L = wet_L_meter;
-	*ir->port_meter_wet_R = wet_R_meter;
+	//~ *ir->port_meter_dry_L = dry_L_meter;
+	//~ *ir->port_meter_dry_R = dry_R_meter;
+	//~ *ir->port_meter_wet_L = wet_L_meter;
+	//~ *ir->port_meter_wet_R = wet_R_meter;
 }
 
 const void * extdata_IR(const char * uri) {
