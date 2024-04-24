@@ -169,7 +169,11 @@ static void connectPortIR(LV2_Handle instance,
 			//~ LOGD ("copying %d", i);
 			ir->source_samples[i] = (( float *) data) [i];
 		}
-		
+	
+		ir -> resample_init (ir);
+		ir -> prepare_convdata(ir);
+		ir -> init_conv(ir);
+
 		LOGD ("set frames successfully");
 
 		break ;
