@@ -24,6 +24,13 @@
 #include <stdio.h>
 #include "zita-convolver.h"
 
+#ifdef __ANDROID__
+    #include <android/log.h>
+    #define MODULE_NAME "TAP IR"
+    #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, MODULE_NAME, __VA_ARGS__)
+#else
+    #define LOGD(...) printf(__VA_ARGS__)
+#endif
 
 
 int zita_convolver_major_version (void)
@@ -173,6 +180,9 @@ int Convproc::configure (uint32_t  ninp,
 	_quantum = quantum;
 	_minpart = minpart;
 	_maxpart = size;
+	
+	///| TODO: check this function because the following is 
+	///| apparently so less that the sub threads are not started
 	_nlevels = pind;
 	_latecnt = 0;
 	_inpsize = 2 * size;
@@ -290,7 +300,10 @@ int Convproc::start_process (int abspri, int policy)
 {
     uint32_t k;
 
-    if (_state != ST_STOP) return Converror::BAD_STATE;
+    if (_state != ST_STOP) {
+	LOGD ("ERROR _state != ST_STOP Converror::BAD_STATE");
+	return Converror::BAD_STATE;
+    }
     _latecnt = 0;
     _inpoffs = 0;
     _outoffs = 0;
@@ -298,9 +311,11 @@ int Convproc::start_process (int abspri, int policy)
 
     for (k = (_minpart == _quantum) ? 1 : 0; k < _nlevels; k++)
     {
+	LOGD ("k = %d", k);
         _convlev [k]->start (abspri, policy);
     }
     _state = ST_PROC;
+    LOGD ("conv proc started");
     return 0;
 }
 
@@ -621,7 +636,8 @@ void Convlevel::start (int abspri, int policy)
     pthread_attr_setscope (&attr, PTHREAD_SCOPE_SYSTEM);
     pthread_attr_setinheritsched (&attr, PTHREAD_EXPLICIT_SCHED);
     pthread_attr_setstacksize (&attr, 0x10000);
-    pthread_create (&_pthr, &attr, static_main, this);
+    int res = pthread_create (&_pthr, &attr, static_main, this);
+    LOGD ("pthread_create returned %d", res);
     pthread_attr_destroy (&attr);
 }
 
@@ -690,6 +706,9 @@ void *Convlevel::static_main (void *arg)
 void Convlevel::main (void)
 {
     _stat = ST_PROC;
+     pid_t x = gettid ();
+
+    LOGD ("started thread %d", x);
     while (true)
     {
 	_trig.wait ();

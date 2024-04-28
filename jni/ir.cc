@@ -507,12 +507,14 @@ void init_conv(IR * ir) {
 	int req_to_use;
 
 	if (!ir->ir_samples || !ir->ir_nfram || !ir->nchan) {
+		LOGD ("!ir->ir_samples || !ir->ir_nfram || !ir->nchan");
+		LOGD ("convolver not started!");
 		return;
 	}
 
 	if (ir->conv_in_use != ir->conv_req_to_use) {
-		fprintf(stderr, "IR init_conv: error, engine still in use!\n");
-		return;
+		LOGD("IR init_conv: error, engine still in use!\n");
+		//~ return;
 	}
 
 	if (ir->conv_in_use == 1) { /* new one will be 0th */
@@ -532,7 +534,7 @@ void init_conv(IR * ir) {
 	int nfram;
 
 	if (predelay_samples + ir->ir_nfram > length) {
-		fprintf(stderr, "IR: warning: truncated IR to %d samples\n", length);
+		LOGD("IR: warning: truncated IR to %d samples\n", length);
 		nfram = length - predelay_samples;
 	} else {
 		nfram = ir->ir_nfram;
@@ -570,7 +572,7 @@ void init_conv(IR * ir) {
 #endif
 	// G_UNLOCK(conv_configure_lock);
 	if (ret != 0) {
-		fprintf(stderr, "IR: can't initialise zita-convolver engine, Convproc::configure returned %d\n", ret);
+		LOGD("IR: can't initialise zita-convolver engine, Convproc::configure returned %d\n", ret);
 		free_conv_safely(conv);
 		if (req_to_use == 0) {
 			ir->conv_0 = NULL;
@@ -604,11 +606,13 @@ void init_conv(IR * ir) {
 		conv->impdata_create(1, 1, 1, ir->ir_samples[3],
 				     predelay_samples, nfram + predelay_samples);
 		break;
-	default: printf("IR init_conv: error, impossible value: ir->nchan = %d\n",
+	default: LOGD("IR init_conv: error, impossible value: ir->nchan = %d\n",
 			ir->nchan);
 	}
 
+	LOGD ("starting convolver ...") ;
 	conv->start_process(CONVPROC_SCHEDULER_PRIORITY, CONVPROC_SCHEDULER_CLASS);
+	LOGD ("... convolver started");
 	ir->conv_req_to_use = req_to_use;
 }
 
@@ -729,7 +733,7 @@ static void runIR(LV2_Handle instance, uint32_t sample_count) {
 
 		ir->conv_in_use = ir->conv_req_to_use;
 		ir->autogain = ir->autogain_new;
-		//printf("IR engine switching to conv_%d  autogain = %f\n", ir->conv_in_use, ir->autogain);
+		LOGD("IR engine switching to conv_%d  autogain = %f\n", ir->conv_in_use, ir->autogain);
 	}
 	if (ir->conv_in_use == 0) {
 		conv = ir->conv_0;
@@ -769,6 +773,7 @@ static void runIR(LV2_Handle instance, uint32_t sample_count) {
 	//~ LOGD ("761");
 
 	if (conv != 0) {
+		//~ LOGD ("using conv %d", ir->conv_in_use) ;
 		p = conv->inpdata(0);
 		q = conv->inpdata(1);
 		float x;
@@ -798,6 +803,7 @@ static void runIR(LV2_Handle instance, uint32_t sample_count) {
 			out_R[j] = dry_R + wet_R;
 		}
 	} else { /* convolution engine not available */
+		//~ LOGD ("warning: conv is NULL!");
 		for (int j = 0; j < n; j++) {
 			dry_gain = SMOOTH_CO_1 * dry_gain + SMOOTH_CO_0 * dry_gain_raw;
 			dry_L = in_L[j] * dry_gain;
